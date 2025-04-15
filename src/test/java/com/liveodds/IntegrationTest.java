@@ -1,62 +1,44 @@
-package com.liveodds.service;
+package com.liveodds;
 
 import com.liveodds.exception.NonExistingException;
 import com.liveodds.exception.TeamAlreadyInMatchException;
 import com.liveodds.model.Match;
-import com.liveodds.utils.Validator;
+import com.liveodds.service.ScoreboardFactory;
+import com.liveodds.service.ScoreboardService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
-public class ScoreboardServiceImplTest {
+public class IntegrationTest {
 
     private final String SPAIN = "Spain";
     private final String ITALY = "Italy";
 
     private ScoreboardService service;
-    private Validator validator;
-    private MatchStore matchStore;
 
     @BeforeEach
     public void setUp() {
-        validator = Mockito.mock(Validator.class);
-        matchStore = Mockito.mock(MatchStore.class);
-        service = new ScoreboardServiceImpl(validator, matchStore);
-        when(validator.validateTeam(SPAIN)).thenReturn(SPAIN);
-        when(validator.validateTeam(ITALY)).thenReturn(ITALY);
-        when(validator.validateTeam("Denmark")).thenReturn("Denmark");
-        doThrow(new NonExistingException("Team Tnt does not exist.")).when(validator).validateTeam("Tnt");
-        doThrow(new IllegalArgumentException("Team name cannot be null or empty.")).when(validator).validateTeam(null);
-        doThrow(new IllegalArgumentException("Team name cannot be null or empty.")).when(validator).validateTeam(" ");
-        doThrow(new IllegalArgumentException("Team name cannot be null or empty.")).when(validator).validateTeam("");
-        doThrow(new IllegalArgumentException("Score cannot be negative.")).when(validator).validateScore(-2);
+        service = ScoreboardFactory.createDefaultScoreboard();
     }
 
     @Test
     public void given_correctParam_when_startNewMatch_then_newMatchCreated() {
         service.startNewMatch(SPAIN, ITALY);
-        ArgumentCaptor<Match> captor = ArgumentCaptor.forClass(Match.class);
-        verify(matchStore).save(anyString(), captor.capture());
-        Assertions.assertEquals(SPAIN, captor.getValue().getHomeTeam());
-        Assertions.assertEquals(ITALY, captor.getValue().getAwayTeam());
-        Assertions.assertEquals(0, captor.getValue().getAwayTeamScore());
-        Assertions.assertEquals(0, captor.getValue().getHomeTeamScore());
+        List<String> summary = service.getSummary();
+        Assertions.assertEquals("Spain 0 - Italy 0", summary.get(0));
     }
 
     @Test
     public void given_alreadyInMatchTeam_when_startNewMatch_then_correctExceptionThrown() {
-        when(matchStore.findMatches())
-                .thenReturn(List.of())
-                .thenReturn(List.of())
-                .thenReturn(List.of(new Match(SPAIN, ITALY)));
         service.startNewMatch(SPAIN, ITALY);
         TeamAlreadyInMatchException exception = Assertions.assertThrows(TeamAlreadyInMatchException.class, () -> service.startNewMatch(SPAIN, "Denmark"));
         Assertions.assertEquals("Team Spain already in match.", exception.getMessage());
@@ -82,20 +64,16 @@ public class ScoreboardServiceImplTest {
 
     @Test
     public void given_correctTeamWithTwoWord_when_startNewMatch_then_noException() {
-        when(validator.validateTeam("South Sudan")).thenReturn("South Sudan");
-        when(validator.validateTeam("Sudan")).thenReturn("Sudan");
         service.startNewMatch(SPAIN, "South Sudan");
         Assertions.assertDoesNotThrow(() -> service.startNewMatch(ITALY, "Sudan"));
     }
 
     @Test
     public void given_correctParam_when_updateScore_then_scoresUpdated() {
-        Optional<Match> optionalMatch = Optional.of(new Match(SPAIN, ITALY));
-        when(matchStore.findMatch(anyString())).thenReturn(optionalMatch);
         service.startNewMatch(SPAIN, ITALY);
         service.updateMatch(SPAIN, ITALY, 1, 0);
-        Assertions.assertEquals(1, optionalMatch.get().getHomeTeamScore());
-        Assertions.assertEquals(0, optionalMatch.get().getAwayTeamScore());
+        List<String> summary = service.getSummary();
+        Assertions.assertEquals("Spain 1 - Italy 0", summary.get(0));
     }
 
     @Test
@@ -125,8 +103,6 @@ public class ScoreboardServiceImplTest {
 
     @Test
     public void given_incorrectScore_when_updateScore_then_correctExceptionThrown() {
-        Optional<Match> optionalMatch = Optional.of(new Match(SPAIN, ITALY));
-        when(matchStore.findMatch(anyString())).thenReturn(optionalMatch);
         service.startNewMatch(SPAIN, ITALY);
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> service.updateMatch(SPAIN, ITALY, -2, 0));
         Assertions.assertEquals("Score cannot be negative.", exception.getMessage());
@@ -134,11 +110,10 @@ public class ScoreboardServiceImplTest {
 
     @Test
     public void given_correctParam_when_finishMatch_then_matchRemoved() {
-        Optional<Match> optionalMatch = Optional.of(new Match(SPAIN, ITALY));
-        when(matchStore.findMatch(anyString())).thenReturn(optionalMatch);
         service.startNewMatch(SPAIN, ITALY);
         service.finishMatch(SPAIN, ITALY);
-        verify(matchStore).remove(anyString());
+        List<String> summary = service.getSummary();
+        Assertions.assertTrue(summary.isEmpty());
     }
 
     @Test
@@ -168,63 +143,34 @@ public class ScoreboardServiceImplTest {
 
     @Test
     public void given_matches_when_getSummary_then_summaryGotten() {
-        List<Match> matches = new ArrayList<>();
-        matches.add(new Match(SPAIN, ITALY));
-        matches.add(new Match("Denmark", "Portugal"));
-        matches.add(new Match("France", "Germany"));
+        service.startNewMatch(SPAIN, ITALY);
+        service.startNewMatch("Denmark", "Portugal");
+        service.startNewMatch("France", "Germany");
 
-        matches.get(0).updateScores(2, 0);
-        matches.get(1).updateScores(3, 1);
-        matches.get(2).updateScores(0, 1);
+        service.updateMatch(SPAIN, ITALY, 2, 0);
+        service.updateMatch("Denmark", "Portugal", 3, 1);
+        service.updateMatch("France", "Germany", 0, 1);
 
-        when(matchStore.findMatches()).thenReturn(matches);
         List<String> summary = service.getSummary();
-        Assertions.assertTrue(summary.contains("Spain 2 - Italy 0"));
-        Assertions.assertTrue(summary.contains("Denmark 3 - Portugal 1"));
-        Assertions.assertTrue(summary.contains("France 0 - Germany 1"));
-    }
-
-    @Test
-    public void given_matchesWithDifferentScores_when_getSummary_then_orderedSummaryGotten() {
-        List<Match> matches = new ArrayList<>();
-        matches.add(new Match(SPAIN, ITALY));
-        matches.add(new Match("Denmark", "Portugal"));
-        matches.add(new Match("France", "Germany"));
-
-        matches.get(0).updateScores(2, 0);
-        matches.get(1).updateScores(3, 1);
-        matches.get(2).updateScores(0, 1);
-
-        when(matchStore.findMatches()).thenReturn(matches);
-        List<String> summary = service.getSummary();
-        StringBuilder actualSummary = new StringBuilder();
-        for (String s : summary) {
-            actualSummary.append(s).append("\n");
-        }
-        String expectedSummary = """
-                Denmark 3 - Portugal 1
-                Spain 2 - Italy 0
-                France 0 - Germany 1
-                """;
-        Assertions.assertEquals(expectedSummary, actualSummary.toString());
+        Assertions.assertEquals("Denmark 3 - Portugal 1", summary.get(0));
+        Assertions.assertEquals("Spain 2 - Italy 0", summary.get(1));
+        Assertions.assertEquals("France 0 - Germany 1", summary.get(2));
     }
 
     @Test
     public void given_matchesWithSameScores_when_getSummary_then_orderedSummaryGotten() {
-        List<Match> matches = new ArrayList<>();
-        matches.add(new Match("Mexico", "Canada"));
-        matches.add(new Match(SPAIN, "Brazil"));
-        matches.add(new Match("Germany", "France"));
-        timeout(1);
-        matches.add(new Match("Uruguay", ITALY));
-        matches.add(new Match("Argentina", "Australia"));
+        service.startNewMatch("Mexico", "Canada");
+        service.startNewMatch(SPAIN, "Brazil");
+        service.startNewMatch("Germany", "France");
+        times(1);
+        service.startNewMatch("Uruguay", ITALY);
+        service.startNewMatch("Argentina", "Australia");
 
-        matches.get(0).updateScores(0, 5);
-        matches.get(1).updateScores(10, 2);
-        matches.get(2).updateScores(2, 2);
-        matches.get(3).updateScores(6, 6);
-        matches.get(4).updateScores(3, 1);
-        when(matchStore.findMatches()).thenReturn(matches);
+        service.updateMatch("Mexico", "Canada", 0, 5);
+        service.updateMatch(SPAIN, "Brazil", 10, 2);
+        service.updateMatch("Germany", "France", 2, 2);
+        service.updateMatch("Uruguay", ITALY, 6, 6);
+        service.updateMatch("Argentina", "Australia", 3, 1);
 
         List<String> summary = service.getSummary();
         StringBuilder actualSummary = new StringBuilder();
