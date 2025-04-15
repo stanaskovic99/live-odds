@@ -2,7 +2,9 @@ package com.liveodds.utils;
 
 import com.liveodds.exception.NonExistingException;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Validator {
@@ -14,20 +16,20 @@ public class Validator {
     }
 
     public String validateTeam(String teamName) {
-        if(teamName == null || teamName.isBlank()){
+        if (teamName == null || teamName.isBlank()) {
             throw new IllegalArgumentException("Team name cannot be null or empty.");
         }
 
         String normalized = NameUtil.normalize(teamName);
 
-        if(!countryNames.contains(normalized)) {
+        if (!countryNames.contains(normalized)) {
             throw new NonExistingException(String.format("Team %s does not exist.", teamName));
         }
         return normalized;
     }
 
     public void validateScore(int score) {
-        if(score < 0) {
+        if (score < 0) {
             throw new IllegalArgumentException("Score cannot be negative.");
         }
     }

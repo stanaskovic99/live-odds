@@ -1,14 +1,13 @@
 package com.liveodds.service;
 
 import com.liveodds.model.Match;
-import com.liveodds.utils.NameUtil;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class HashMapMatchStore implements MatchStore {
+final class HashMapMatchStore implements MatchStore {
 
     private final Map<String, Match> matches = new HashMap<>();
 
@@ -36,7 +35,7 @@ public class HashMapMatchStore implements MatchStore {
     }
 
     private void checkKey(Object key) {
-        if(!(key instanceof String)) {
+        if (!(key instanceof String)) {
             throw new IllegalArgumentException("Key must be a string");
         }
     }

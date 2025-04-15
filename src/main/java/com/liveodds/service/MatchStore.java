@@ -7,7 +7,10 @@ import java.util.Optional;
 
 public interface MatchStore {
     Optional<Match> findMatch(Object key);
+
     List<Match> findMatches();
-    void save (Object key, Match match);
-    void remove (Object key);
+
+    void save(Object key, Match match);
+
+    void remove(Object key);
 }
