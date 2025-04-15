@@ -15,12 +15,12 @@ public class ValidatorTest {
     }
 
     @Test
-    public void given_correctTeam_when_validateTeam_then_noExceptionThrown() {
-        Assertions.assertDoesNotThrow(() -> validator.validateTeam("France"));
-        Assertions.assertDoesNotThrow(() -> validator.validateTeam("france"));
-        Assertions.assertDoesNotThrow(() -> validator.validateTeam(" frAnce"));
-        Assertions.assertDoesNotThrow(() -> validator.validateTeam("fRance   "));
-        Assertions.assertDoesNotThrow(() -> validator.validateTeam("united  kingdom   "));
+    public void given_correctTeam_when_validateTeam_then_normalizedTeamName() {
+        Assertions.assertEquals("France", validator.validateTeam("France"));
+        Assertions.assertEquals("France", validator.validateTeam("france"));
+        Assertions.assertEquals("France", validator.validateTeam(" frAnce"));
+        Assertions.assertEquals("France", validator.validateTeam("fRance   "));
+        Assertions.assertEquals("United Kingdom", validator.validateTeam("united  kingdom   "));
     }
 
     @Test

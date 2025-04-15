@@ -4,6 +4,7 @@ import com.liveodds.exception.NonExistingException;
 import com.liveodds.exception.TeamAlreadyInMatchException;
 import com.liveodds.model.Match;
 import com.liveodds.service.ScoreboardService;
+import com.liveodds.utils.NameUtil;
 import com.liveodds.utils.Validator;
 
 import java.util.HashMap;
@@ -21,8 +22,8 @@ public final class ScoreboardServiceImpl implements ScoreboardService {
 
     @Override
     public void startNewMatch(String homeTeam, String awayTeam) {
-        validator.validateTeam(homeTeam);
-        validator.validateTeam(awayTeam);
+        homeTeam = validator.validateTeam(homeTeam);
+        awayTeam = validator.validateTeam(awayTeam);
         if(isTeamAlreadyInMatch(homeTeam)) {
             throw new TeamAlreadyInMatchException(String.format("Team %s already in match.", homeTeam));
         }
@@ -34,8 +35,8 @@ public final class ScoreboardServiceImpl implements ScoreboardService {
 
     @Override
     public void updateMatch(String homeTeam, String awayTeam, int homeTeamScore, int awayTeamScore) {
-        validator.validateTeam(homeTeam);
-        validator.validateTeam(awayTeam);
+        homeTeam = validator.validateTeam(homeTeam);
+        awayTeam = validator.validateTeam(awayTeam);
         Match match = getMatch(homeTeam, awayTeam);
         if(match == null) {
             throw new NonExistingException(String.format("Match %s - %s does not exist.", homeTeam, awayTeam));
@@ -47,8 +48,8 @@ public final class ScoreboardServiceImpl implements ScoreboardService {
 
     @Override
     public void finishMatch(String homeTeam, String awayTeam) {
-        validator.validateTeam(homeTeam);
-        validator.validateTeam(awayTeam);
+        homeTeam = validator.validateTeam(homeTeam);
+        awayTeam = validator.validateTeam(awayTeam);
         Match match = matches.get(keyOf(homeTeam, awayTeam));
         if(match == null) {
             throw new NonExistingException(String.format("Match %s - %s does not exist.", homeTeam, awayTeam));
@@ -69,10 +70,11 @@ public final class ScoreboardServiceImpl implements ScoreboardService {
     }
 
     private boolean isTeamAlreadyInMatch(String team) {
-        return matches.keySet().stream().anyMatch(k -> k.contains(team));
+        return matches.values().stream()
+                .anyMatch(m -> m.getAwayTeam().equals(team) || m.getHomeTeam().equals(team));
     }
 
     private String keyOf(String homeTeam, String awayTeam) {
-        return homeTeam + "_" + awayTeam;
+        return NameUtil.normalize(homeTeam) + "_" + NameUtil.normalize(awayTeam);
     }
 }

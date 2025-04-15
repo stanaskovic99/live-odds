@@ -13,16 +13,17 @@ public class Validator {
         this.countryNames = loadCountryNames();
     }
 
-    public void validateTeam(String teamName) {
+    public String validateTeam(String teamName) {
         if(teamName == null || teamName.isBlank()){
             throw new IllegalArgumentException("Team name cannot be null or empty.");
         }
 
-        String normalized = normalizeName(teamName);
+        String normalized = NameUtil.normalize(teamName);
 
         if(!countryNames.contains(normalized)) {
             throw new NonExistingException(String.format("Team %s does not exist.", teamName));
         }
+        return normalized;
     }
 
     public void validateScore(int score) {
@@ -35,14 +36,5 @@ public class Validator {
         return Arrays.stream(Locale.getISOCountries())
                 .map(code -> new Locale("", code).getDisplayCountry())
                 .collect(Collectors.toSet());
-    }
-
-    private String normalizeName(String name) {
-        return Arrays.stream(name.trim()
-                        .toLowerCase()
-                        .split("\\s+"))
-                .map(word ->
-                        word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase()
-                ).collect(Collectors.joining(" "));
     }
 }
