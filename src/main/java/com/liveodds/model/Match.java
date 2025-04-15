@@ -2,19 +2,21 @@ package com.liveodds.model;
 
 import java.time.Instant;
 
-public class Match implements Comparable<Match> {
+public final class Match implements Comparable<Match> {
 
     private final String homeTeam;
     private final String awayTeam;
     private int homeTeamScore;
     private int awayTeamScore;
     private final Instant startTime;
+    private int totalScore;
 
     public Match(String homeTeam, String awayTeam) {
         this.homeTeam = homeTeam;
         this.awayTeam = awayTeam;
         this.homeTeamScore = 0;
         this.awayTeamScore = 0;
+        this.totalScore = 0;
         this.startTime = Instant.now();
     }
 
@@ -30,16 +32,8 @@ public class Match implements Comparable<Match> {
         return homeTeamScore;
     }
 
-    public void setHomeTeamScore(int homeTeamScore) {
-        this.homeTeamScore = homeTeamScore;
-    }
-
     public int getAwayTeamScore() {
         return awayTeamScore;
-    }
-
-    public void setAwayTeamScore(int awayTeamScore) {
-        this.awayTeamScore = awayTeamScore;
     }
 
     public Instant getStartTime() {
@@ -47,7 +41,13 @@ public class Match implements Comparable<Match> {
     }
 
     private int getTotalScore() {
-        return homeTeamScore + awayTeamScore;
+        return totalScore;
+    }
+
+    public void updateScores(int homeTeamScore, int awayTeamScore) {
+        this.homeTeamScore = homeTeamScore;
+        this.awayTeamScore = awayTeamScore;
+        this.totalScore = homeTeamScore + awayTeamScore;
     }
 
     public String toString() {

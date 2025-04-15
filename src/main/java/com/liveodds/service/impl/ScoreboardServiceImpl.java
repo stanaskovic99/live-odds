@@ -42,8 +42,7 @@ public final class ScoreboardServiceImpl implements ScoreboardService {
         }
         validator.validateScore(homeTeamScore);
         validator.validateScore(awayTeamScore);
-        match.setAwayTeamScore(awayTeamScore);
-        match.setHomeTeamScore(homeTeamScore);
+        match.updateScores(homeTeamScore, awayTeamScore);
     }
 
     @Override
