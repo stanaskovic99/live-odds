@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MatchStore {
-    Optional<Match> findMatch(Object key);
+    Optional<Match> findMatch(String key);
 
     List<Match> findMatches();
 
-    void save(Object key, Match match);
+    void save(String key, Match match);
 
-    void remove(Object key);
+    void remove(String key);
 }
