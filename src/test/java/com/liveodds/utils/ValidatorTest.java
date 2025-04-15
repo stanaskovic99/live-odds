@@ -20,6 +20,7 @@ public class ValidatorTest {
         Assertions.assertDoesNotThrow(() -> validator.validateTeam("france"));
         Assertions.assertDoesNotThrow(() -> validator.validateTeam(" frAnce"));
         Assertions.assertDoesNotThrow(() -> validator.validateTeam("fRance   "));
+        Assertions.assertDoesNotThrow(() -> validator.validateTeam("united  kingdom   "));
     }
 
     @Test

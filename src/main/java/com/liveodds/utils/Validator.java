@@ -21,7 +21,7 @@ public class Validator {
         String normalized = normalizeName(teamName);
 
         if(!countryNames.contains(normalized)) {
-            throw new NonExistingException("Team " + teamName + " does not exist.");
+            throw new NonExistingException(String.format("Team %s does not exist.", teamName));
         }
     }
 
@@ -38,6 +38,11 @@ public class Validator {
     }
 
     private String normalizeName(String name) {
-        return name.trim().substring(0, 1).toUpperCase() + name.trim().substring(1).toLowerCase();
+        return Arrays.stream(name.trim()
+                        .toLowerCase()
+                        .split("\\s+"))
+                .map(word ->
+                        word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase()
+                ).collect(Collectors.joining(" "));
     }
 }
