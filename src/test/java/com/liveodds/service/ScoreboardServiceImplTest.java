@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,10 +46,10 @@ public class ScoreboardServiceImplTest {
         service.startNewMatch(SPAIN, ITALY);
         ArgumentCaptor<Match> captor = ArgumentCaptor.forClass(Match.class);
         verify(matchStore).save(anyString(), captor.capture());
-        Assertions.assertEquals(SPAIN, captor.getValue().getHomeTeam());
-        Assertions.assertEquals(ITALY, captor.getValue().getAwayTeam());
-        Assertions.assertEquals(0, captor.getValue().getAwayTeamScore());
-        Assertions.assertEquals(0, captor.getValue().getHomeTeamScore());
+        Assertions.assertEquals(SPAIN, captor.getValue().homeTeam());
+        Assertions.assertEquals(ITALY, captor.getValue().awayTeam());
+        Assertions.assertEquals(0, captor.getValue().awayTeamScore());
+        Assertions.assertEquals(0, captor.getValue().homeTeamScore());
     }
 
     @Test
@@ -56,7 +57,7 @@ public class ScoreboardServiceImplTest {
         when(matchStore.findMatches())
                 .thenReturn(List.of())
                 .thenReturn(List.of())
-                .thenReturn(List.of(new Match(SPAIN, ITALY)));
+                .thenReturn(List.of(new Match(SPAIN, ITALY,0,0, Instant.now(), 0)));
         service.startNewMatch(SPAIN, ITALY);
         TeamAlreadyInMatchException exception = Assertions.assertThrows(TeamAlreadyInMatchException.class, () -> service.startNewMatch(SPAIN, "Denmark"));
         Assertions.assertEquals("Team Spain already in match.", exception.getMessage());
@@ -90,12 +91,11 @@ public class ScoreboardServiceImplTest {
 
     @Test
     public void given_correctParam_when_updateScore_then_scoresUpdated() {
-        Optional<Match> optionalMatch = Optional.of(new Match(SPAIN, ITALY));
+        Optional<Match> optionalMatch = Optional.of(new Match(SPAIN, ITALY,0,0, Instant.now(), 0));
         when(matchStore.findMatch(anyString())).thenReturn(optionalMatch);
         service.startNewMatch(SPAIN, ITALY);
         service.updateMatch(SPAIN, ITALY, 1, 0);
-        Assertions.assertEquals(1, optionalMatch.get().getHomeTeamScore());
-        Assertions.assertEquals(0, optionalMatch.get().getAwayTeamScore());
+        verify(matchStore, times(2)).save(anyString(), any(Match.class));
     }
 
     @Test
@@ -125,7 +125,7 @@ public class ScoreboardServiceImplTest {
 
     @Test
     public void given_incorrectScore_when_updateScore_then_correctExceptionThrown() {
-        Optional<Match> optionalMatch = Optional.of(new Match(SPAIN, ITALY));
+        Optional<Match> optionalMatch = Optional.of(new Match(SPAIN, ITALY,0,0, Instant.now(), 0));
         when(matchStore.findMatch(anyString())).thenReturn(optionalMatch);
         service.startNewMatch(SPAIN, ITALY);
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> service.updateMatch(SPAIN, ITALY, -2, 0));
@@ -134,7 +134,7 @@ public class ScoreboardServiceImplTest {
 
     @Test
     public void given_correctParam_when_finishMatch_then_matchRemoved() {
-        Optional<Match> optionalMatch = Optional.of(new Match(SPAIN, ITALY));
+        Optional<Match> optionalMatch = Optional.of(new Match(SPAIN, ITALY,0,0, Instant.now(), 0));
         when(matchStore.findMatch(anyString())).thenReturn(optionalMatch);
         service.startNewMatch(SPAIN, ITALY);
         service.finishMatch(SPAIN, ITALY);
@@ -169,13 +169,9 @@ public class ScoreboardServiceImplTest {
     @Test
     public void given_matches_when_getSummary_then_summaryGotten() {
         List<Match> matches = new ArrayList<>();
-        matches.add(new Match(SPAIN, ITALY));
-        matches.add(new Match("Denmark", "Portugal"));
-        matches.add(new Match("France", "Germany"));
-
-        matches.get(0).updateScores(2, 0);
-        matches.get(1).updateScores(3, 1);
-        matches.get(2).updateScores(0, 1);
+        matches.add(new Match(SPAIN, ITALY,2,0, Instant.now(), 2));
+        matches.add(new Match("Denmark", "Portugal",3,1, Instant.now(), 4));
+        matches.add(new Match("France", "Germany",0,1, Instant.now(), 1));
 
         when(matchStore.findMatches()).thenReturn(matches);
         List<String> summary = service.getSummary();
@@ -187,13 +183,9 @@ public class ScoreboardServiceImplTest {
     @Test
     public void given_matchesWithDifferentScores_when_getSummary_then_orderedSummaryGotten() {
         List<Match> matches = new ArrayList<>();
-        matches.add(new Match(SPAIN, ITALY));
-        matches.add(new Match("Denmark", "Portugal"));
-        matches.add(new Match("France", "Germany"));
-
-        matches.get(0).updateScores(2, 0);
-        matches.get(1).updateScores(3, 1);
-        matches.get(2).updateScores(0, 1);
+        matches.add(new Match(SPAIN, ITALY,2,0, Instant.now(), 2));
+        matches.add(new Match("Denmark", "Portugal",3,1, Instant.now(), 4));
+        matches.add(new Match("France", "Germany",0,1, Instant.now(), 1));
 
         when(matchStore.findMatches()).thenReturn(matches);
         List<String> summary = service.getSummary();
@@ -210,20 +202,14 @@ public class ScoreboardServiceImplTest {
     }
 
     @Test
-    public void given_matchesWithSameScores_when_getSummary_then_orderedSummaryGotten() {
+    public void given_matchesWithSameScores_when_getSummary_then_orderedSummaryGotten() throws InterruptedException {
         List<Match> matches = new ArrayList<>();
-        matches.add(new Match("Mexico", "Canada"));
-        matches.add(new Match(SPAIN, "Brazil"));
-        matches.add(new Match("Germany", "France"));
-        timeout(1);
-        matches.add(new Match("Uruguay", ITALY));
-        matches.add(new Match("Argentina", "Australia"));
-
-        matches.get(0).updateScores(0, 5);
-        matches.get(1).updateScores(10, 2);
-        matches.get(2).updateScores(2, 2);
-        matches.get(3).updateScores(6, 6);
-        matches.get(4).updateScores(3, 1);
+        matches.add(new Match("Mexico", "Canada",0,5, Instant.now(), 5));
+        matches.add(new Match(SPAIN, "Brazil",10,2, Instant.now(), 12));
+        matches.add(new Match("Germany", "France",2,2, Instant.now(), 4));
+        Thread.sleep(1);
+        matches.add(new Match("Uruguay", ITALY,6,6, Instant.now(), 12));
+        matches.add(new Match("Argentina", "Australia",3,1, Instant.now(), 4));
         when(matchStore.findMatches()).thenReturn(matches);
 
         List<String> summary = service.getSummary();

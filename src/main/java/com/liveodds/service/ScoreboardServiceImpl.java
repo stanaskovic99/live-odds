@@ -6,6 +6,7 @@ import com.liveodds.model.Match;
 import com.liveodds.utils.NameUtil;
 import com.liveodds.utils.Validator;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,7 +30,8 @@ final class ScoreboardServiceImpl implements ScoreboardService {
         if (isTeamAlreadyInMatch(awayTeam)) {
             throw new TeamAlreadyInMatchException(String.format("Team %s already in match.", awayTeam));
         }
-        matchStore.save(keyOf(homeTeam, awayTeam), new Match(homeTeam, awayTeam));
+        Match match = new Match(homeTeam, awayTeam, 0,0, Instant.now(), 0);
+        matchStore.save(keyOf(homeTeam, awayTeam), match);
     }
 
     @Override
@@ -42,7 +44,8 @@ final class ScoreboardServiceImpl implements ScoreboardService {
         }
         validator.validateScore(homeTeamScore);
         validator.validateScore(awayTeamScore);
-        optionalMatch.get().updateScores(homeTeamScore, awayTeamScore);
+        Match match = optionalMatch.get().updateScores(homeTeamScore, awayTeamScore);
+        matchStore.save(keyOf(homeTeam, awayTeam), match);
     }
 
     @Override
@@ -66,7 +69,7 @@ final class ScoreboardServiceImpl implements ScoreboardService {
 
     private boolean isTeamAlreadyInMatch(String team) {
         return matchStore.findMatches().stream()
-                .anyMatch(m -> m.getAwayTeam().equals(team) || m.getHomeTeam().equals(team));
+                .anyMatch(m -> m.awayTeam().equals(team) || m.homeTeam().equals(team));
     }
 
     private String keyOf(String homeTeam, String awayTeam) {

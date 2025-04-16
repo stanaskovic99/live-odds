@@ -2,52 +2,10 @@ package com.liveodds.model;
 
 import java.time.Instant;
 
-public final class Match implements Comparable<Match> {
+public record Match(String homeTeam, String awayTeam, int homeTeamScore,  int awayTeamScore, Instant startTime, int totalScore) implements Comparable<Match> {
 
-    private final String homeTeam;
-    private final String awayTeam;
-    private int homeTeamScore;
-    private int awayTeamScore;
-    private final Instant startTime;
-    private int totalScore;
-
-    public Match(String homeTeam, String awayTeam) {
-        this.homeTeam = homeTeam;
-        this.awayTeam = awayTeam;
-        this.homeTeamScore = 0;
-        this.awayTeamScore = 0;
-        this.totalScore = 0;
-        this.startTime = Instant.now();
-    }
-
-    public String getAwayTeam() {
-        return awayTeam;
-    }
-
-    public String getHomeTeam() {
-        return homeTeam;
-    }
-
-    public int getHomeTeamScore() {
-        return homeTeamScore;
-    }
-
-    public int getAwayTeamScore() {
-        return awayTeamScore;
-    }
-
-    public Instant getStartTime() {
-        return startTime;
-    }
-
-    private int getTotalScore() {
-        return totalScore;
-    }
-
-    public void updateScores(int homeTeamScore, int awayTeamScore) {
-        this.homeTeamScore = homeTeamScore;
-        this.awayTeamScore = awayTeamScore;
-        this.totalScore = homeTeamScore + awayTeamScore;
+    public Match updateScores(int homeTeamScore, int awayTeamScore) {
+        return new Match(this.homeTeam, this.awayTeam, homeTeamScore, awayTeamScore, this.startTime, homeTeamScore + awayTeamScore);
     }
 
     public String toString() {
@@ -56,7 +14,7 @@ public final class Match implements Comparable<Match> {
 
     @Override
     public int compareTo(Match o) {
-        int scoreComparison = Integer.compare(o.getTotalScore(), this.getTotalScore());
+        int scoreComparison = Integer.compare(o.totalScore(), this.totalScore());
         return scoreComparison != 0
                 ? scoreComparison
                 : o.startTime.compareTo(startTime);

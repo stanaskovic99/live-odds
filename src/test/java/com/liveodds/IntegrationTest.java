@@ -2,21 +2,15 @@ package com.liveodds;
 
 import com.liveodds.exception.NonExistingException;
 import com.liveodds.exception.TeamAlreadyInMatchException;
-import com.liveodds.model.Match;
 import com.liveodds.service.ScoreboardFactory;
 import com.liveodds.service.ScoreboardService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 public class IntegrationTest {
 
@@ -142,11 +136,11 @@ public class IntegrationTest {
     }
 
     @Test
-    public void given_matches_when_getSummary_then_summaryGotten() {
+    public void given_matches_when_getSummary_then_summaryGotten() throws InterruptedException {
         service.startNewMatch(SPAIN, ITALY);
         service.startNewMatch("Denmark", "Portugal");
         service.startNewMatch("France", "Germany");
-
+        Thread.sleep(1);
         service.updateMatch(SPAIN, ITALY, 2, 0);
         service.updateMatch("Denmark", "Portugal", 3, 1);
         service.updateMatch("France", "Germany", 0, 1);
@@ -158,11 +152,11 @@ public class IntegrationTest {
     }
 
     @Test
-    public void given_matchesWithSameScores_when_getSummary_then_orderedSummaryGotten() {
+    public void given_matchesWithSameScores_when_getSummary_then_orderedSummaryGotten() throws InterruptedException {
         service.startNewMatch("Mexico", "Canada");
         service.startNewMatch(SPAIN, "Brazil");
         service.startNewMatch("Germany", "France");
-        times(1);
+        Thread.sleep(1);
         service.startNewMatch("Uruguay", ITALY);
         service.startNewMatch("Argentina", "Australia");
 
