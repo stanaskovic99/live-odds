@@ -13,8 +13,7 @@ final class HashMapMatchStore implements MatchStore {
 
     @Override
     public Optional<Match> findMatch(String key) {
-        checkKey(key);
-        return Optional.ofNullable(matches.get((String) key));
+        return Optional.ofNullable(matches.get(key));
     }
 
     @Override
@@ -24,19 +23,11 @@ final class HashMapMatchStore implements MatchStore {
 
     @Override
     public void save(String key, Match match) {
-        checkKey(key);
-        matches.put((String) key, match);
+        matches.put(key, match);
     }
 
     @Override
     public void remove(String key) {
-        checkKey(key);
-        matches.remove((String) key);
-    }
-
-    private void checkKey(String key) {
-        if (!(key instanceof String)) {
-            throw new IllegalArgumentException("Key must be a string");
-        }
+        matches.remove(key);
     }
 }
